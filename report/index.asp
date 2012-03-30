@@ -87,7 +87,7 @@ tr:nth-child(odd) { background-color: #e2f7f7;}
 </style>
 </head>
 <body>
-<img src="logoEPI.png" width="200"/>
+<img src="/DB/logo.png" width="200"/>
 <h1>Elektronische toetsen</h1>
 <%showLinks%>
 <p>&nbsp;</p>

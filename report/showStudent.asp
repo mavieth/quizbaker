@@ -38,7 +38,7 @@ Sub displayScores
 	if rs.EOF then
 		%><p>Deze student heeft nog geen toetsen afgelegd.</p><%
 	else
-	
+
 		strImagePath = getImagePath(rs)
 		%>
 
@@ -54,7 +54,7 @@ Sub displayScores
 		<%
 		ShowScoresList rs
 	end if
-	
+
 	rs.close
 	db.CloseConn
 	set rs = nothing
@@ -117,7 +117,7 @@ $(function() {
 </head>
 <body>
 <p id="credits"><a href="http://about.me/michiel">Help<span class="tooltip"><span></span>Vragen? Email Michiel van der Blonk : pmvanderblonk@epiaruba.com</span></a></p>
-<a href="/report/"><img src="logoEPI.png" width="200"/></a>
+<a href="/report/"><img src="/DB/logo.png" width="200"/></a>
 <h1>Resultaten</h1>
 <%
 displayScores

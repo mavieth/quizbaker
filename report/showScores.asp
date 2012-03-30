@@ -161,7 +161,7 @@ Sub exportResults(klas)
 	Dim url
 	Dim html
 	Dim curdir
-		
+
 	REM init db connection
 	set db = oQuiz.getDB()
 
@@ -178,11 +178,11 @@ Sub exportResults(klas)
 		sql = sql & " WHERE quiz_id=" & Req("id")
 		sql = sql & " ORDER BY lastmodified DESC"
 	End If
-	
+
 	curdir=Server.MapPath("/students/")
 	set rs = db.getRs(sql, adOpenForwardOnly, adLockReadOnly)
 	do until rs.eof
-		url = "http://" & Request.ServerVariables("SERVER_NAME") & "/report/showScores.asp?view=true&details=true&id=" & rs("quiz_id") & "&student=" & rs("Nummer")		
+		url = "http://" & Request.ServerVariables("SERVER_NAME") & "/report/showScores.asp?view=true&details=true&id=" & rs("quiz_id") & "&student=" & rs("Nummer")
 		html = getHtml(url)
 		writeToFile curdir & "\output\" & rs("Nummer") & ".html", html, false
 		rs.moveNext
@@ -211,7 +211,7 @@ Sub displayScores(klas)
 		sql = sql & " WHERE quiz_id=" & Req("id")
 		sql = sql & " ORDER BY lastmodified DESC"
 	End If
-	
+
 	set rs = db.getRs(sql, adOpenForwardOnly, adLockReadOnly)
 
 	%>
@@ -236,14 +236,14 @@ End Sub
 Sub ShowScoresClass(rs, klas)
 	Dim strImagePath
 	Dim studentId
-	
+
 	do until rs.eof
 		if studentId<>rs("Nummer") and studentId<>"" then
 			%></table><%
 		end if
 		if studentId<>rs("Nummer") then
 			%><h2><%=rs("Achternaam")%>, <%=rs("Voornaam")%></h2><%
-			studentId = rs("Nummer")		
+			studentId = rs("Nummer")
 			strImagePath = getImagePath(rs)
 			%><%=anchor(strImagePath, img(strImagePath, 120), "lightbox")%>
 
@@ -482,7 +482,7 @@ $(function() {
 </head>
 <body>
 <p id="credits"><a href="http://about.me/michiel">Help<span class="tooltip"><span></span>Vragen? Email Michiel van der Blonk : pmvanderblonk@epiaruba.com</span></a></p>
-<a href="/report/"><img src="logoEPI.png" width="200"/></a>
+<a href="/report/"><img src="/DB/logo.png" width="200"/></a>
 <h1>Resultaten
 <%if days<>"" then
 	if days = 1 then print " vandaag"

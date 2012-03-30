@@ -90,7 +90,7 @@ $(function() {
 </head>
 <body>
 <p id="credits"><a href="http://about.me/michiel">Help<span class="tooltip"><span></span>Vragen? Email Michiel van der Blonk : pmvanderblonk@epiaruba.com</span></a></p>
-<a href="/report/"><img id="logo" src="logoEPI.png" width="200"/></a>
+<a href="/report/"><img id="logo" src="/DB/logo.png" width="200"/></a>
 <h1>Klas <%=Req("klas")%></h1>
 <%
 showClass Req("klas")
