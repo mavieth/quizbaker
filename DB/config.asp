@@ -10,6 +10,6 @@ End Class
 
 Dim config
 set config = new Configuration
-config.dbname = "Toets"
+config.dbname = "QuizBaker"
 config.dbserver = "SQLEXPRESS"
 %>
