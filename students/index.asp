@@ -26,10 +26,10 @@ Function Search(s)
 		db.serverName = config.dbserver
 		db.dbname = config.dbname
 		sql = "SELECT * FROM Students "
-		sql = sql & "WHERE Voornaam LIKE @q "
-		sql = sql & "OR Achternaam LIKE @q "
-		sql = sql & "OR Klas LIKE @q "
-		sql = sql & "OR Nummer LIKE @q "
+		sql = sql & "WHERE FirstName LIKE @q "
+		sql = sql & "OR LastName LIKE @q "
+		sql = sql & "OR Class LIKE @q "
+		sql = sql & "OR Id LIKE @q "
 		sql = sql & "ORDER BY " & sortField
 		sql = replace(sql, "@q", sq("%" & s & "%") )
 		'print sql
@@ -45,7 +45,7 @@ Function ImageLink(id, size)
 	Dim strFilePath
 	Dim strImgPath
 
-	strFilePath = nvl(rs("Nummer")) & ".jpg"
+	strFilePath = nvl(rs("StudentId")) & ".jpg"
 	strImgPath = "/students/" & strFilePath
 	if not FileExists(strImgPath) then
 		strImgPath = "/students/avatar.gif"
@@ -67,14 +67,13 @@ term = Trim(Req("q"))
 set rs = Search(term)
 if not rs is nothing then
 	count = rs.recordCount
-	'print imageLink(rs("Nummer"))
 end if
 %>
 <!DOCTYPE html>
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>Schoogle - EPI Student Search Engine</title>
+	<title>Schoogle - Student Search Engine</title>
 	<style>
 	#main { text-align:center; margin: 0 auto; display: block; width: 40em; margin-top: 150px; }
 	#searchForm button,	#searchForm input { font-size:2em; }
@@ -124,10 +123,10 @@ end if
 				if Req("showpictures")="true" then%>
 				<th>Foto</th>
 				<%end if%>
-			<th title="sorteren op Nummer" onclick="setSort('Nummer')">Nummer</th>
-			<th title="sorteren op Achternaam" onclick="setSort('Achternaam')">Achternaam</th>
-			<th title="sorteren op Voornaam" onclick="setSort('Voornaam')">Voornaam</th>
-			<th title="sorteren op Klas" onclick="setSort('Klas')">Klas</th>
+			<th title="sort by Id" onclick="setSort('Id')">Id</th>
+			<th title="sort by Last Name" onclick="setSort('LastName)">Last Name</th>
+			<th title="sort by First Name" onclick="setSort('FirstName')">First Name</th>
+			<th title="sort by Class" onclick="setSort('Class')">Class</th>
 			<%end if%>
 		</tr>
 		<%
@@ -136,12 +135,12 @@ end if
 				%>
 				<tr>
 				<%if Req("showpictures") then%>
-				<%=td(imageLink(rs("Nummer"), 60))%>
+				<%=td(imageLink(rs("StudentId"), 60))%>
 				<%end if%>
-				<td><a href="/report/showStudent.asp?id=<%=rs("Nummer")%>"><%=UCase(rs("Nummer"))%></td>
-				<%=td(rs("Achternaam"))%>
-				<%=td(rs("Voornaam"))%>
-				<%=UCase(td(rs("Klas")))%></tr><%
+				<td><a href="/report/showStudent.asp?id=<%=rs("StudentId")%>"><%=UCase(rs("StudentId"))%></td>
+				<%=td(rs("LastName"))%>
+				<%=td(rs("FirstName"))%>
+				<%=UCase(td(rs("Class")))%></tr><%
 				rs.moveNext
 			loop
 		end if

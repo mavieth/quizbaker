@@ -33,7 +33,7 @@ Sub displayScores
 	set db = oQuiz.getDB()
 
 	' get scores
-	sql = "SELECT * FROM vwSummary WHERE Nummer=" & sq(Req("id")) & " ORDER BY lastmodified DESC"
+	sql = "SELECT * FROM vwSummary WHERE StudentId=" & sq(Req("id")) & " ORDER BY lastmodified DESC"
 	set rs = db.getRs(sql, adOpenForwardOnly, adLockReadOnly)
 	if rs.EOF then
 		%><p>Deze student heeft nog geen toetsen afgelegd.</p><%
@@ -46,9 +46,9 @@ Sub displayScores
 
 		<%=anchor(strImagePath, img(strImagePath, 120), "lightbox")%>
 		<dl>
-			<dt>ID</dt><dd><%=rs("Nummer")%></dd>
-			<dt>Student</dt><dd><%=rs("Achternaam")%>, <%=rs("Voornaam")%></dd>
-			<dt>Klas</dt><dd><%=rs("Klas")%></dd>
+			<dt>ID</dt><dd><%=rs("qsId")%></dd>
+			<dt>Student</dt><dd><%=rs("LastName")%>, <%=rs("FirstName")%></dd>
+			<dt>Class</dt><dd><%=rs("Class")%></dd>
 		</dl>
 
 		<%
@@ -85,9 +85,9 @@ Sub ShowScoresList(rs)
 		print td(rs("status")) & nl
 		print td(rs("raw_score")) & nl
 		print td(rs("time"))
-		%><td><a href="showScores.asp?view=true&details=true&id=<% print rs("quiz_id")%>&student=<%print rs("Nummer")%>">view<a/></td><%
+		%><td><a href="showScores.asp?view=true&details=true&id=<% print rs("quiz_id")%>&student=<%print rs("StudentId")%>">view<a/></td><%
 		print vbNewLine
-		%><td><a onclick="return confirm('You are about to delete id <%=rs("id")%> for <%=rs("Nummer")%>. Continue?')" href="showScores.asp?action=delete&id=<% print rs("id")%>&student=<%print rs("Nummer")%>">delete<a/></td><%
+		%><td><a onclick="return confirm('You are about to delete id <%=rs("qsid")%> for <%=rs("StudentId")%>. Continue?')" href="showScores.asp?action=delete&id=<%=rs("qsid")%>&student=<%print rs("StudentId")%>">delete<a/></td><%
 		print "</tr>"
 		rs.MoveNext
 	loop
@@ -118,7 +118,7 @@ $(function() {
 <body>
 <p id="credits"><a href="http://about.me/michiel">Help<span class="tooltip"><span></span>Vragen? Email Michiel van der Blonk : pmvanderblonk@epiaruba.com</span></a></p>
 <a href="/report/"><img src="/DB/logo.png" width="200"/></a>
-<h1>Resultaten</h1>
+<h1>Results</h1>
 <%
 displayScores
 %>

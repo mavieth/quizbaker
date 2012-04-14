@@ -108,13 +108,15 @@ sub showarray(rij)
 end sub
 	
 sub showrecordset(rs)
+	Dim f
+	
 	response.write "<pre style=""background:SpringGreen"">" & vbNewline
 	response.write "Recordset:<br>" & vbNewline
 	showrsfields rs
 	do until rs.eof
 		%><tr><%
 		for each f in rs.fields
-			%><td style="border:1px solid black"><%=crop(f.value,12)%></td><%
+			%><td style="border:1px solid black"><%=left(f.value,12)%></td><%
 		next
 		%></tr><%
 		rs.movenext		
@@ -129,7 +131,7 @@ sub showrsfields(rs)
 	%><table><%
 	%><tr><%
 	for each f in rs.fields
-		%><th style="border:1px solid black"><%=crop(f.name,12)%></th><%
+		%><th style="border:1px solid black"><%=left(f.name,12)%></th><%
 	next
 	%></tr><%
 end sub

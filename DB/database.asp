@@ -19,16 +19,24 @@ Class Database
 		serverName = config.dbserver
 
 		If dbname = "" Then
-			Err.Raise 1, "Toets app: no database name given"
+			Err.Raise 1, "no database name given"
 		End If
 		If serverName = "" Then
-			Err.Raise 1, "Toets app: no server name given"
+			Err.Raise 1, "no server name given"
 		End If
 
 		dbserver = replace(serverName, ".\", "")
-		strConn = "Provider=SQLOLEDB.1;Integrated Security=SSPI;Persist Security Info=False;User ID=;Password=;Initial Catalog=" & dbName & ";Data Source=" & dbserver
-		strConn = "Provider=SQLOLEDB.1;SERVER=.\" & serverName & ";DATABASE=" & dbname & ";Initial Catalog=" & dbname & ";UID=web;PWD=P@ssw0rd;"
-
+		if config.dbtype = "MSSQL" then
+			if config.useDomain then
+				strConn = "Provider=SQLOLEDB.1;Integrated Security=SSPI;Persist Security Info=False;User ID=;Password=;Initial Catalog=" & dbName & ";Data Source=" & dbserver
+			else
+				strConn = "Provider=SQLOLEDB.1;SERVER=.\" & serverName & ";DATABASE=" & dbname & ";Initial Catalog=" & dbname & ";UID=web;PWD=P@ssw0rd;"
+			end if
+		end if
+		if config.dbtype = "MS Access" then
+			strConn = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source="& Server.MapPath("/") & "/" & config.dbfile & ";User Id=admin;Password=;"
+		end if
+				
 		If Not IsEmpty(oConn) Then
 			If oConn.State = adStateOpen Then
 				Exit Sub
@@ -45,7 +53,7 @@ Class Database
 
 		If oConn.Errors.Count <> 0 Then
 			For Each errItem In oConn.Errors
-				If errItem.NativeError <> 5701 Then
+				If errItem.NativeError <> 5701 and errItem.NativeError <> 0 Then
 					Response.Write "<br>NativeError = " & errItem.NativeError
 					Response.Write "<br>Description = " & errItem.Description
 					Response.Write "<br>SQLState	= " & errItem.SqlState
@@ -67,6 +75,7 @@ Class Database
 
 		Dim rs
 		Set rs = Server.CreateObject("ADODB.Recordset")
+'show squery
 		rs.Open sQuery, oConn, intCursorType, intLockType
 		Set getRs = rs
 	End Function

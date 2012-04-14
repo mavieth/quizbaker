@@ -50,17 +50,17 @@ Sub ShowClass(klas)
 		%><div><%
 		print anchor(strImagePath, img(strImagePath, 120), "lightbox") & nl
 		%><dl class="tooltip"><%
-		print dt("Voornaam") & dd(rs("Voornaam")) & nl
-		print dt("Achternaam") & dd(rs("Achternaam")) & nl
-		print dt("Klas") & dd(rs("Klas")) & nl
-		print dt("Nummer") & dd(rs("Nummer")) & nl
+		print dt("First Name") & dd(rs("FirstName")) & nl
+		print dt("Last Name") & dd(rs("LastName")) & nl
+		print dt("Class") & dd(rs("Class")) & nl
+		print dt("Id") & dd(rs("StudentId")) & nl
 
-		strTitle = rs("Voornaam") & " " & rs("Achternaam") & br
-		strTitle = strTitle & "Klas: " & rs("Klas") & br
-		strTitle = strTitle & "Nummer: " & rs("Nummer") & br
+		strTitle = rs("FirstName") & " " & rs("LastName") & br
+		strTitle = strTitle & "Class: " & rs("Class") & br
+		strTitle = strTitle & "Id: " & rs("StudentId") & br
 		%></dl>
 
-		<p><a href="showScores.asp?view=true&details=true&student=<%print rs("Nummer")%>"><%=rs("Voornaam")%><br/><%=rs("Achternaam")%><span class="tooltip"><span></span><%=strTitle%></span><a/></p><%
+		<p><a href="showScores.asp?view=true&details=true&student=<%print rs("StudentId")%>"><%=rs("FirstName")%><br/><%=rs("LastName")%><span class="tooltip"><span></span><%=strTitle%></span><a/></p><%
 		print vbNewLine
 		print "</div>"
 		rs.MoveNext

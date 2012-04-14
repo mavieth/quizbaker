@@ -6,13 +6,6 @@
 '
 ' ADO constants include file for VBScript
 '
-'--------------------------------------------------------------------
-'[BEGIN]ADOVBS constanten[-BEGIN]
-' In dit documenten worden alle constanten gedefinieerd voor het gebruik
-' van ado objecten. (online referentie : http://www.devguru.com) 
-' Als dit bestand niet meer te vinden is ergens kan je het nog altijd downloaden.
-' Door te zoeken in google op ADOVBS
-'[END]
 '---- CursorTypeEnum Values ----
 Const adOpenForwardOnly = 0
 Const adOpenKeyset = 1

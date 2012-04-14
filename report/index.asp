@@ -52,17 +52,17 @@ Sub showClass
 	db.serverName = config.dbserver
 	db.dbname = config.dbname
 	c = ","
-	sql = "SELECT DISTINCT Unit, Klas FROM vwSummary WHERE Klas IS NOT NULL ORDER BY Unit, Klas"
+	sql = "SELECT DISTINCT Department, class FROM vwSummary WHERE class IS NOT NULL ORDER BY Department, class"
 
 	set rs = db.getRs(sql, adOpenForwardOnly, adLockReadOnly)
 	%>
 	<table>
 		<tr>
-			<th>Unit</th>
-			<th>Klas</th>
+			<th>Department</th>
+			<th>class</th>
 		<%do until rs.eof
-		%><tr><td><% print rs("Unit")%></td><%
-		%><td><a href="showScores.asp?view=true&style=list&class=<%=rs("Klas")%>"%><% print rs("Klas")%></a></td></tr><%
+		%><tr><td><% print rs("Department")%></td><%
+		%><td><a href="showScores.asp?view=true&style=list&class=<%=rs("class")%>"%><% print rs("class")%></a></td></tr><%
 		rs.MoveNext
 	loop
 	%></table><%
@@ -78,7 +78,7 @@ End Sub
 <head profile="http://gmpg.org/xfn/11">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-<title>Elektronische toetsen</title>
+<title>Test Report</title>
 <style>
 body { font: .76em arial; margin:1em; }
 td, th {border:1px solid silver; padding:.2em}
@@ -88,7 +88,7 @@ tr:nth-child(odd) { background-color: #e2f7f7;}
 </head>
 <body>
 <img src="/DB/logo.png" width="200"/>
-<h1>Elektronische toetsen</h1>
+<h1>Test Report</h1>
 <%showLinks%>
 <p>&nbsp;</p>
 <%showClass%>

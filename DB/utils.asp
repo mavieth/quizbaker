@@ -62,6 +62,16 @@ Function nvl(s)
 	end if
 End Function
 
+Function toNumber(s)
+	if s="" then
+		toNumber=0
+	elseif isnumeric(s) then
+		toNumber = CDbl(s)
+	else
+		toNumber = s
+	end if
+End Function
+
 Function getImagePath(rs)
 	Dim strFilePath
 	Dim strImagePath
@@ -78,11 +88,11 @@ Function getImagePath(rs)
 
 	if recordFound then
 		' get filepath
-	if nvl(rs("Photo"))<>"" then
-		strFilePath = nvl(rs("Photo"))
-	else
-		strFilePath = nvl(rs("Nummer")) & ".jpg"
-	end if
+		if nvl(rs("Photo"))<>"" then
+			strFilePath = nvl(rs("Photo"))
+		else
+			strFilePath = nvl(rs("StudentId")) & ".jpg"
+		end if
 	end if
 
 	strFilePath = "\students\" & strFilePath

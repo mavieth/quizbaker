@@ -135,7 +135,7 @@ Class Quiz
 		Dim username
 		Dim userId
 		Dim rs
-
+		
 		Set db = getDB()
 
 		username = options.username
@@ -146,9 +146,10 @@ Class Quiz
 				rs.addNew
 				rs.Update
 			End If
-			updateSummary rs("id"), username
+			summaryId = rs("id")
 			rs.Close
 			db.CloseConn
+			updateSummary summaryId, username
 		Else
 			summaryId = userId
 		End If
@@ -170,22 +171,22 @@ Class Quiz
 		rs("min_score") = score.minScore
 		rs("time") = Now()
 		
-	REM get current student klas
+	REM get current student class
 		Dim sql
 		Dim rsStudent
-		Dim klas
+		Dim studentClass
 		Dim studentId
-		studentId = replace(options.username, "COLEGIO-EPI\", "")
+		studentId = replace(options.username, config.domain & "\", "")
 
-		klas = ""
-		sql = "SELECT Klas FROM Students WHERE Nummer = " & sq(studentId)			
+		studentClass = ""
+		sql = "SELECT Class FROM Students WHERE Id = " & sq(studentId)			
 		set rsStudent = db.getRsReadOnly(sql)
 		if not rsStudent.eof then
-			klas = nvl(rsStudent("klas"))
+			studentClass = nvl(rsStudent("Class"))
 		end if
 		rsStudent.close
 		
-		rs("klas") = klas
+		rs("Class") = studentClass
 		rs.Update
 		summaryId = rs("id")
 		rs.Close
@@ -227,7 +228,7 @@ Class Quiz
 
 		Set db = getDB()
 
-		sql = "SELECT COUNT(*) num FROM quiz_detail WHERE summary_id=@summaryId"
+		sql = "SELECT COUNT(*) AS num FROM quiz_detail WHERE summary_id=@summaryId"
 		sql = Replace(sql, "@summaryId", summaryId)
 
 		Set rs = db.getRs(sql, adOpenForwardOnly, adLockReadOnly)
@@ -266,7 +267,7 @@ Class Quiz
 			rs("summary_id") = summaryId
 			rs("lastmodified") = Now()
 			rs("timestamp") = Now()
-			rs("score") = line.points
+			rs("score") = toNumber(line.points)
 			rs("question") = line.question
 			rs("interaction_id") = line.interactionId
 			rs("objective_id") = line.objectiveId
@@ -274,7 +275,7 @@ Class Quiz
 			rs("student_response") = line.studentResponse
 			rs("result") = line.result
 			rs("weight") = 1
-			rs("latency") = line.latency
+			rs("latency") = toNumber(line.latency)
 			rs.Update
 		Next
 	End Sub

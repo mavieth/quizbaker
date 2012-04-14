@@ -33,6 +33,8 @@ action=Req("action")
 select case LCase(action)
 	case "delete"
 	deleteQuizResult Int(Req("id"))
+	case "send"
+	sendQuizResult Int(Req("id")), Req("student")
 case "export"
 	exportResults Req("class")
 	case "history"
@@ -92,6 +94,66 @@ Sub deleteQuizResult(id)
 	set db = nothing
 End Sub
 
+Sub sendQuizResult(quizId, studentId)
+	Dim sql
+	Dim quizName
+	Dim url
+	Dim html
+	Dim curdir
+	Dim db
+	Dim cdoConfig
+	Dim cdoMessage
+	Dim schema
+	Dim Flds
+	Dim recipient
+	
+	Dim iMsg
+	Dim iConf
+	Dim cfg
+
+	' init db connection
+	set db = oQuiz.getDB()
+
+	if Req("id")<>"" then
+		quizName = oQuiz.GetName(Req("id"))
+	end if
+
+	' get email text (html from report)
+	url = "http://" & Request.ServerVariables("SERVER_NAME") & "/report/showScores.asp?view=true&details=true&id=" & quizId & "&student=" & studentId & "&format=email"
+	html = getHtml(url)
+
+	Set iMsg = CreateObject("CDO.Message")
+	Set iConf = CreateObject("CDO.Configuration")
+	cfg = "http://schemas.microsoft.com/cdo/configuration/"
+
+	iConf.Load -1 ' CDO Source Defaults
+	Set Flds = iConf.Fields
+
+	Flds.Item(cfg&"smtpusessl") = config.smtp_ssl
+	Flds.Item(cfg&"sendusing") = 2 ' using port
+	Flds.Item(cfg&"smtpserver") = config.smtp_server
+	Flds.Item(cfg&"sendusername") = config.smtp_user
+	Flds.Item(cfg&"sendpassword") = config.smtp_password
+	Flds.Item(cfg&"smtpauthenticate") = config.smtp_auth
+	Flds.Item(cfg&"smtpserverport") = config.smtp_port
+	Flds.Update
+
+	recipient = studentId & "@epiaruba.com"
+	With iMsg
+		Set .Configuration = iConf
+		.To = recipient
+		.CC = ""
+		.BCC = "pmvanderblonk@epiaruba.com"
+		.From = "Colegio EPI <ColegioEPI@gmail.com>"
+		.Subject = "Your test results on " & quizName
+		.HTMLBody = html
+		.Send
+	End With
+	
+    Set iMsg = Nothing  
+    Set iConf = Nothing 
+End Sub
+ 
 Sub displayDetails
 	Dim db
 	Dim rs
@@ -108,21 +170,27 @@ Sub displayDetails
 	sql = "SELECT * FROM vwDetails "
 	sql = sql & "WHERE quizId=" & Req("id") & " "
 	if Req("student")<>"" then
-		sql = sql & "AND Nummer=" & sq(Req("student")) & " "
+		sql = sql & "AND StudentId=" & sq(Req("student")) & " "
 	end if
 	sql = sql & "ORDER BY timestamp DESC"
+
 	set rs = db.getRs(sql, adOpenForwardOnly, adLockReadOnly)
 
+	if rs.EOF then
+		%><p>There are no results for this test yet.</p><%
+	else
 	strImagePath = getImagePath(rs)
 
 	%>
-	<h2>Scores voor quiz: <strong><%=quizname%></strong></h2>
+	<h2>Scores for test: <strong><%=quizname%></strong></h2>
+	<% if Req("format")<>"email" then%>
 	<%=anchor(strImagePath, img(strImagePath, 120), "lightbox")%>
+	<% end if%>
 
 	<dl>
-		<dt>ID</dt><dd><%=rs("Nummer")%></dd>
-		<dt>Student</dt><dd><%=rs("Achternaam")%>, <%=rs("Voornaam")%></dd>
-		<dt>Klas</dt><dd><%=rs("Klas")%></dd>
+		<dt>ID</dt><dd><%=rs("StudentId")%></dd>
+		<dt>Student</dt><dd><%=rs("LastName")%>, <%=rs("FirstName")%></dd>
+		<dt>Class</dt><dd><%=rs("Class")%></dd>
 		<dt>Percentage</dt><dd><%=rs("raw_score")%>%</dd>
 	</dl>
 	<table>
@@ -147,13 +215,14 @@ Sub displayDetails
 		rs.MoveNext
 	loop
 	%></table><%
+	end if
 	rs.close
 	db.CloseConn
 	set rs = nothing
 	set db = nothing
 End Sub
 
-Sub exportResults(klas)
+Sub exportResults(studentClass)
 	Dim db
 	Dim rs
 	Dim sql
@@ -171,9 +240,9 @@ Sub exportResults(klas)
 
 	' get scores
 	sql = "SELECT * FROM vwSummary"
-	If klas <> "" Then
-		sql = sql & " WHERE Klas=" & sq(klas)
-		sql = sql & " ORDER BY Klas, Achternaam"
+	If studentClass <> "" Then
+		sql = sql & " WHERE Class=" & sq(studentClass)
+		sql = sql & " ORDER BY Class, Achternaam"
 	Else
 		sql = sql & " WHERE quiz_id=" & Req("id")
 		sql = sql & " ORDER BY lastmodified DESC"
@@ -182,14 +251,18 @@ Sub exportResults(klas)
 	curdir=Server.MapPath("/students/")
 	set rs = db.getRs(sql, adOpenForwardOnly, adLockReadOnly)
 	do until rs.eof
-		url = "http://" & Request.ServerVariables("SERVER_NAME") & "/report/showScores.asp?view=true&details=true&id=" & rs("quiz_id") & "&student=" & rs("Nummer")
+		url = "http://" & Request.ServerVariables("SERVER_NAME") & "/report/showScores.asp?view=true&details=true&id=" & rs("quiz_id") & "&student=" & rs("StudentId")		
 		html = getHtml(url)
-		writeToFile curdir & "\output\" & rs("Nummer") & ".html", html, false
+		writeToFile curdir & "\output\" & rs("StudentId") & ".html", html, false
 		rs.moveNext
 	loop
+	rs.close
+	db.CloseConn
+	set rs = nothing
+	set db = nothing	
 End Sub
 
-Sub displayScores(klas)
+Sub displayScores(studentClass)
 	Dim db
 	Dim rs
 	Dim sql
@@ -204,9 +277,9 @@ Sub displayScores(klas)
 
 	' get scores
 	sql = "SELECT * FROM vwSummary"
-	If klas <> "" Then
-		sql = sql & " WHERE CurrentClass=" & sq(klas)
-		sql = sql & " ORDER BY Klas, Achternaam"
+	If studentClass <> "" Then
+		sql = sql & " WHERE CurrentClass=" & sq(studentClass)
+		sql = sql & " ORDER BY Class, LastName"
 	Else
 		sql = sql & " WHERE quiz_id=" & Req("id")
 		sql = sql & " ORDER BY lastmodified DESC"
@@ -215,11 +288,11 @@ Sub displayScores(klas)
 	set rs = db.getRs(sql, adOpenForwardOnly, adLockReadOnly)
 
 	%>
-	<h2>Scores voor quiz: <strong><%=quizname%></strong></h2>
+	<h2>Scores for test: <strong><%=quizname%></strong></h2>
 
 	<%
-	if klas<>"" then
-		ShowScoresClass rs, klas
+	if studentClass<>"" then
+		ShowScoresClass rs, studentClass
 	else
 		If LCase(Req("style")) = "pictures" Then
 			ShowScoresPictures rs
@@ -233,24 +306,24 @@ Sub displayScores(klas)
 	set db = nothing
 End Sub
 
-Sub ShowScoresClass(rs, klas)
+Sub ShowScoresClass(rs, studentClass)
 	Dim strImagePath
 	Dim studentId
 
 	do until rs.eof
-		if studentId<>rs("Nummer") and studentId<>"" then
+		if studentId<>rs("StudentId") and studentId<>"" then
 			%></table><%
 		end if
-		if studentId<>rs("Nummer") then
-			%><h2><%=rs("Achternaam")%>, <%=rs("Voornaam")%></h2><%
-			studentId = rs("Nummer")
+		if studentId<>rs("StudentId") then
+			%><h2><%=rs("LastName")%>, <%=rs("FirstName")%></h2><%
+			studentId = rs("StudentId")		
 			strImagePath = getImagePath(rs)
 			%><%=anchor(strImagePath, img(strImagePath, 120), "lightbox")%>
 
 			<dl>
-				<dt>ID</dt><dd><a href="showStudent.asp?id=<%print rs("Nummer")%>"><%=rs("Nummer")%><a/></dd>
-				<dt>Student</dt><dd><%=rs("Achternaam")%>, <%=rs("Voornaam")%></dd>
-				<dt>Klas</dt><dd><%=rs("CurrentClass")%></dd>
+				<dt>ID</dt><dd><a href="showStudent.asp?id=<%print rs("StudentId")%>"><%=rs("StudentId")%><a/></dd>
+				<dt>Student</dt><dd><%=rs("LastName")%>, <%=rs("LastName")%></dd>
+				<dt>Class</dt><dd><%=rs("CurrentClass")%></dd>
 			</dl>
 			<table>
 				<tr>
@@ -270,7 +343,7 @@ Sub ShowScoresClass(rs, klas)
 			print td(rs("raw_score")) & nl
 			print td(round(rs("raw_score")/100*9+1,1)) & nl
 			print td(rs("time"))
-			%><td><a href="showScores.asp?view=true&details=true&id=<% print rs("quiz_id")%>&student=<%print rs("Nummer")%>">view<a/></td><%
+			%><td><a href="showScores.asp?view=true&details=true&id=<% print rs("quiz_id")%>&student=<%=rs("StudentId")%>">view<a/></td><%
 			print vbNewLine
 			print "</tr>"
 			rs.MoveNext
@@ -283,17 +356,18 @@ Sub ShowScoresList(rs)
 	<table>
 	<tr>
 		<th class="<%=quizVisible%>">quiz</th>
-		<th>photo</th>
-		<th>voornaam</th>
-		<th>achternaam</th>
-		<th>klas</th>
-		<th>student</th>
-		<th>status</th>
-		<th>score</th>
-		<th>grade</th>
-		<th>time</th>
-		<th>view</th>
-		<th>delete</th>
+		<th>Photo</th>
+		<th>First Name</th>
+		<th>Last Name</th>
+		<th>Class</th>
+		<th>Student</th>
+		<th>Status</th>
+		<th>Score</th>
+		<th>Grade</th>
+		<th>Time</th>
+		<th>View</th>
+		<th>Send</th>
+		<th>Delete</th>
 	</tr>
 	<%
 	do until rs.eof
@@ -302,16 +376,17 @@ Sub ShowScoresList(rs)
 		print "<tr>"
 		%><td class="<%=quizVisible%>""><%=rs("quizname")%></td><%
 		print td(anchor(strImagePath, img(strImagePath, 60), "lightbox")) & nl
-		print td(rs("Voornaam")) & nl
-		print td(rs("Achternaam")) & nl
+		print td(rs("FirstName")) & nl
+		print td(rs("LastName")) & nl
 		print td(rs("CurrentClass")) & nl
-		%><td><a href="showStudent.asp?id=<%print rs("Nummer")%>"><%=rs("Nummer")%><a/></td><%
+		%><td><a href="showStudent.asp?id=<%print rs("StudentId")%>"><%=rs("StudentId")%><a/></td><%
 		print td(rs("status")) & nl
 		print td(rs("raw_score")) & nl
 		print td(round(rs("raw_score")/100*9+1,1)) & nl
 		print td(rs("time"))
-		%><td><a href="showScores.asp?view=true&details=true&id=<% print rs("quiz_id")%>&student=<%print rs("Nummer")%>">view<a/></td><%
-		%><td><a onclick="return confirm('You are about to delete id <%=rs("id")%> for <%=rs("Nummer")%>. Continue?')" href="showScores.asp?action=delete&id=<% print rs("id")%>&student=<%print rs("Nummer")%>">delete<a/></td><%
+		%><td><a href="showScores.asp?view=true&details=true&id=<% print rs("quiz_id")%>&student=<%print rs("StudentId")%>">view<a/></td><%
+		%><td><a onclick="return confirm('You are about to send a report email for quiz id <%=rs("quiz_id")%> to <%=rs("StudentId")%>. Continue?')" href="showScores.asp?action=send&id=<% print rs("quiz_id")%>&student=<%=rs("StudentId")%>">send<a/></td><%
+		%><td><a onclick="return confirm('You are about to delete id <%=rs("qsId")%> for <%=rs("StudentId")%>. Continue?')" href="showScores.asp?action=delete&id=<% print rs("qsId")%>&student=<%print rs("StudentId")%>">delete<a/></td><%
 		print vbNewLine
 		print "</tr>"
 		rs.MoveNext
@@ -333,22 +408,22 @@ Sub showScoresPictures(rs)
 		print anchor(strImagePath, img(strImagePath, 120), "lightbox") & nl
 		%><dl class="tooltip"><%
 		print dt(rs("quiz_id")) & nl
-		print dt("Voornaam") & dd(rs("Voornaam")) & nl
-		print dt("Achternaam") & dd(rs("Achternaam")) & nl
-		print dt("Klas") & dd(rs("Klas")) & nl
-		print dt("Nummer") & dd(rs("Nummer")) & nl
+		print dt("First Name") & dd(rs("FirstName")) & nl
+		print dt("Last Name") & dd(rs("LastName")) & nl
+		print dt("Class") & dd(rs("Class")) & nl
+		print dt("StudentId") & dd(rs("StudentId")) & nl
 		print dt("Status") & dd(rs("status")) & nl
 		print dt("Score") & dd(rs("raw_score")) & nl
 		print dt("Grade") & dd(round(rs("raw_score")/100*9+1,1)) & nl
 
-		strTitle = rs("Voornaam") & " " & rs("Achternaam") & br
-		strTitle = strTitle & "Klas: " & rs("CurrentClass") & br
-		strTitle = strTitle & "Nummer: " & rs("Nummer") & br
+		strTitle = rs("FirstName") & " " & rs("LastName") & br
+		strTitle = strTitle & "Class: " & rs("CurrentClass") & br
+		strTitle = strTitle & "StudentId: " & rs("StudentId") & br
 		strTitle = strTitle & "Status: " & rs("status") & br
 		strTitle = strTitle & "Score: " & rs("raw_score") & br
 		%></dl>
 
-		<p><a href="showScores.asp?view=true&details=true&id=<% print rs("quiz_id")%>&student=<%print rs("Nummer")%>">details<span class="tooltip"><span></span><%=strTitle%></span><a/></p><%
+		<p><a href="showScores.asp?view=true&details=true&id=<%=rs("quiz_id")%>&student=<%=rs("StudentId")%>">details<span class="tooltip"><span></span><%=strTitle%></span><a/></p><%
 		print vbNewLine
 		print "</div>"
 		rs.MoveNext
@@ -372,14 +447,14 @@ Sub saveScores()
 	end if
 	sql = sql & " ORDER BY lastmodified DESC"
 	set rs = db.getRs(sql, adOpenForwardOnly, adLockReadOnly)
-	print "id,quizname,voornaam,achternaam,klas,student,status,score,time" & vbNewline
+	print "id,quizname,firstname,lastname,class,student,status,score,time" & vbNewline
 	do until rs.eof
 		print q(rs("quiz_id")) & c
 		print q(nvl(rs("quizname"))) & c
-		print q(nvl(rs("Voornaam"))) & c
-		print q(nvl(rs("Achternaam"))) & c
+		print q(nvl(rs("FirstName"))) & c
+		print q(nvl(rs("LastName"))) & c
 		print q(nvl(rs("CurrentClass"))) & c
-		print q(rs("Nummer")) & c
+		print q(rs("StudentId")) & c
 		print q(nvl(rs("status"))) & c
 		print q(rs("raw_score")) & c
 		print q(rs("time"))
@@ -413,7 +488,7 @@ sub saveDetails
 	do until rs.eof
 		print q(rs("quizId")) & c
 		print q(rs("quizname")) & c
-		print q(rs("Nummer")) & c
+		print q(rs("StudentId")) & c
 		print q(rs("questionNum")) & c
 		print q(rs("question")) & c
 		print q(rs("student_response")) & c
@@ -421,8 +496,8 @@ sub saveDetails
 		print q(rs("score")) & c
 		print q(rs("raw_score")) & c
 		print q(rs("interaction_type")) & c
-		print q(rs("Achternaam")) & c
-		print q(rs("Voornaam")) & c
+		print q(rs("LastName")) & c
+		print q(rs("FirstName")) & c
 		print q(nvl(rs("CurrentClass")))
 		print vbNewLine
 		rs.MoveNext
@@ -466,10 +541,21 @@ End Sub
 <head profile="http://gmpg.org/xfn/11">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-<title>Resultaten</title>
+<title>Results</title>
 <link rel="stylesheet" type="text/css" href="/report/lightbox/css/jquery.lightbox-0.5.css" media="screen" />
 <link rel="stylesheet" type="text/css" href="tooltips.css" media="screen" />
-<link rel="stylesheet" type="text/css" href="report.css" media="screen" />
+
+<% 
+if Req("format") <> "email" then
+	%><link rel="stylesheet" type="text/css" href="report.css" media="screen" /><%
+else
+	%>
+	<style>
+		<!-- #include virtual="/report/report.css" -->
+	</style>
+<%
+end if
+%>
 
 <script type="text/javascript" src="/DB/jquery.min.js"></script>
 <script type="text/javascript" src="/report/lightbox/js/jquery.lightbox-0.5.js"></script>
@@ -482,11 +568,13 @@ $(function() {
 </head>
 <body>
 <p id="credits"><a href="http://about.me/michiel">Help<span class="tooltip"><span></span>Vragen? Email Michiel van der Blonk : pmvanderblonk@epiaruba.com</span></a></p>
-<a href="/report/"><img src="/DB/logo.png" width="200"/></a>
-<h1>Resultaten
+<%if Req("format")<>"email" then %>
+<a href="/report/"><img src="logo.png" width="200"/></a>
+<%end if%>
+<h1>Results
 <%if days<>"" then
-	if days = 1 then print " vandaag"
-	if days > 1 then print " laatste " & days & " dagen"
+	if days = 1 then print " today"
+	if days > 1 then print " last " & days & " days"
 end if
 %>
 </h1>
