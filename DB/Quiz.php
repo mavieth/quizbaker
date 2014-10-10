@@ -1,5 +1,5 @@
 <?php
-* This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
 * License, v. 2.0. If a copy of the MPL was not distributed with this file,
 * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -23,7 +23,7 @@ class Quiz {
         $name = $p['quiz']['strTitle'];
         $this->title = $name;
         $sql = "INSERT IGNORE INTO quiz VALUES(NULL, '$name')";
-        quizId = $db->insert($sql) || $this->getQuiz($name);
+        $quizId = $db->insert($sql) || $this->getQuiz($name);
         return $quizId;
     }
 
@@ -44,7 +44,7 @@ class Quiz {
         $db = $this->connect();
 
         // create user record with summary of results
-        '$user = $q['oOptions']['strName'];
+        // $user = $q['oOptions']['strName'];
 	$user = $_SERVER['LOGON_USER'];
 	if (empty($user))
 		$user = $q['oOptions']['strName'];
